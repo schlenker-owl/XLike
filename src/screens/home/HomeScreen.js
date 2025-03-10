@@ -1,92 +1,158 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar } from 'react-native';
-import { Avatar, FAB, Appbar, useTheme, Divider } from 'react-native-paper';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-// Sample tweet data
+// Import components
+import HomeHeader from '../../components/home/HomeHeader';
+import TweetList from '../../components/home/TweetList';
+import NewTweetFAB from '../../components/home/NewTweetFAB';
+
+// Sample tweet data - in a real app, this would come from an API
 const SAMPLE_TWEETS = [
-  { id: '1', content: 'This is a sample tweet 1', user: 'User 1' },
-  { id: '2', content: 'This is a sample tweet 2', user: 'User 2' },
-  { id: '3', content: 'This is a sample tweet 3', user: 'User 3' },
-  { id: '4', content: 'This is a sample tweet 4', user: 'User 4' },
-  { id: '5', content: 'This is a sample tweet 5', user: 'User 5' },
+  {
+    id: '1',
+    user: {
+      id: 'user1',
+      name: 'John Doe',
+      username: 'johndoe',
+      avatar: 'https://randomuser.me/api/portraits/men/1.jpg',
+      verified: true,
+    },
+    content: 'Just setting up my Twitter clone with React Native! #reactnative #twitter #clone',
+    images: [],
+    createdAt: new Date(Date.now() - 25 * 60 * 1000), // 25 minutes ago
+    stats: {
+      comments: 5,
+      retweets: 2,
+      likes: 10,
+    },
+  },
+  {
+    id: '2',
+    user: {
+      id: 'user2',
+      name: 'Jane Smith',
+      username: 'janesmith',
+      avatar: 'https://randomuser.me/api/portraits/women/1.jpg',
+      verified: false,
+    },
+    content: 'This React Native Twitter clone is looking great! Check out the UI components and smooth animations. #mobiledev',
+    images: ['https://picsum.photos/500/300'],
+    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+    stats: {
+      comments: 8,
+      retweets: 4,
+      likes: 16,
+    },
+  },
+  {
+    id: '3',
+    user: {
+      id: 'user3',
+      name: 'Tech Insider',
+      username: 'techinsider',
+      avatar: 'https://randomuser.me/api/portraits/men/2.jpg',
+      verified: true,
+    },
+    content: 'Breaking: New features coming to iOS 16! Apple announces exciting updates for developers.',
+    images: ['https://picsum.photos/500/300?random=1'],
+    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+    stats: {
+      comments: 42,
+      retweets: 128,
+      likes: 507,
+    },
+  },
+  {
+    id: '4',
+    user: {
+      id: 'user4',
+      name: 'React Native',
+      username: 'reactnative',
+      avatar: 'https://randomuser.me/api/portraits/men/3.jpg',
+      verified: true,
+    },
+    content: 'React Native 0.72 is out now with many performance improvements and new features!',
+    images: ['https://picsum.photos/500/300?random=2'],
+    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+    stats: {
+      comments: 87,
+      retweets: 234,
+      likes: 876,
+    },
+  },
 ];
 
 const HomeScreen = ({ navigation }) => {
-  const theme = useTheme();
   const insets = useSafeAreaInsets();
   const [selectedTabIndex, setSelectedTabIndex] = useState(0);
+  const [tweets, setTweets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
   const tabs = ["For you", "Following"];
 
-  const renderHeader = () => (
-    <Appbar.Header style={styles.header}>
-      <TouchableOpacity 
-        style={styles.profileButton}
-        onPress={() => navigation.navigate('Profile')}
-      >
-        <Avatar.Image source={{ uri: 'https://randomuser.me/api/portraits/men/1.jpg' }} size={32} />
-      </TouchableOpacity>
-      
-      <View style={styles.tabsContainer}>
-        {tabs.map((tab, index) => (
-          <TouchableOpacity 
-            key={index}
-            style={[
-              styles.tab, 
-              selectedTabIndex === index && styles.selectedTab
-            ]}
-            onPress={() => setSelectedTabIndex(index)}
-          >
-            <Text style={[
-              styles.tabText,
-              selectedTabIndex === index && styles.selectedTabText
-            ]}>
-              {tab}
-            </Text>
-            {selectedTabIndex === index && <View style={styles.indicator} />}
-          </TouchableOpacity>
-        ))}
-      </View>
-      
-      <TouchableOpacity>
-        <Icon name="cog-outline" size={24} color={theme.colors.primary} />
-      </TouchableOpacity>
-    </Appbar.Header>
-  );
+  // Simulating data fetching
+  useEffect(() => {
+    // In a real app, you would fetch data from an API
+    const fetchData = async () => {
+      try {
+        // Simulate network delay
+        setTimeout(() => {
+          setTweets(SAMPLE_TWEETS);
+          setLoading(false);
+        }, 1000);
+      } catch (error) {
+        console.error('Error fetching tweets:', error);
+        setLoading(false);
+      }
+    };
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity 
-      style={styles.tweetContainer}
-      onPress={() => navigation.navigate('TweetDetail', { tweetId: item.id })}
-    >
-      <Avatar.Image source={{ uri: `https://randomuser.me/api/portraits/men/${parseInt(item.id)}.jpg` }} size={50} />
-      <View style={styles.tweetContent}>
-        <Text style={styles.userName}>{item.user}</Text>
-        <Text>{item.content}</Text>
-      </View>
-    </TouchableOpacity>
-  );
+    fetchData();
+  }, []);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    // In a real app, you would fetch fresh data from an API
+    setTimeout(() => {
+      setTweets(SAMPLE_TWEETS);
+      setRefreshing(false);
+    }, 1000);
+  };
+
+  const handleTweetPress = (tweetId) => {
+    navigation.navigate('TweetDetail', { tweetId });
+  };
+
+  const handleProfilePress = (userId) => {
+    navigation.navigate('Profile', { userId });
+  };
+
+  const handleNewTweet = () => {
+    navigation.navigate('NewTweet');
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" />
       
-      {renderHeader()}
-      
-      <FlatList
-        data={SAMPLE_TWEETS}
-        renderItem={renderItem}
-        keyExtractor={item => item.id}
-        ItemSeparatorComponent={() => <Divider />}
+      <HomeHeader
+        onProfilePress={() => navigation.navigate('Profile')}
+        tabs={tabs}
+        selectedTabIndex={selectedTabIndex}
+        onTabPress={setSelectedTabIndex}
       />
       
-      <FAB
-        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
-        icon="plus"
-        color="#fff"
-        onPress={() => navigation.navigate('NewTweet')}
+      <TweetList
+        tweets={tweets}
+        loading={loading}
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
+        onTweetPress={handleTweetPress}
+        onProfilePress={handleProfilePress}
       />
+      
+      <NewTweetFAB onPress={handleNewTweet} />
     </View>
   );
 };
@@ -95,64 +161,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-  },
-  header: {
-    backgroundColor: '#fff',
-    elevation: 0,
-    shadowOpacity: 0,
-    justifyContent: 'space-between',
-  },
-  profileButton: {
-    padding: 8,
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    flex: 1,
-    justifyContent: 'center',
-  },
-  tab: {
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    height: 42,
-    justifyContent: 'center',
-  },
-  selectedTab: {
-    position: 'relative',
-  },
-  tabText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#657786',
-  },
-  selectedTabText: {
-    color: '#000',
-    fontWeight: 'bold',
-  },
-  indicator: {
-    position: 'absolute',
-    bottom: 0,
-    height: 4,
-    width: 30,
-    backgroundColor: '#1DA1F2',
-    borderRadius: 2,
-  },
-  tweetContainer: {
-    flexDirection: 'row',
-    padding: 16,
-  },
-  tweetContent: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  userName: {
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  fab: {
-    position: 'absolute',
-    margin: 16,
-    right: 0,
-    bottom: 0,
   },
 });
 
