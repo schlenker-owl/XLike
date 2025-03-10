@@ -1,14 +1,19 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { Text, Avatar, Searchbar, useTheme, Divider, FAB } from 'react-native-paper';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+
+// Import components
+import MessagesHeader from '../../components/messages/MessagesHeader';
+import MessageSearch from '../../components/messages/MessageSearch';
+import ConversationsList from '../../components/messages/ConversationsList';
+import NewMessageFAB from '../../components/messages/NewMessageFAB';
 
 // Sample conversations data
 const CONVERSATIONS = [
   { 
     id: '1', 
     user: {
+      id: 'user1',
       name: 'John Doe',
       avatar: 'https://randomuser.me/api/portraits/men/1.jpg',
       username: 'johndoe',
@@ -21,6 +26,7 @@ const CONVERSATIONS = [
   { 
     id: '2', 
     user: {
+      id: 'user2',
       name: 'Jane Smith',
       avatar: 'https://randomuser.me/api/portraits/women/1.jpg',
       username: 'janesmith',
@@ -33,6 +39,7 @@ const CONVERSATIONS = [
   { 
     id: '3', 
     user: {
+      id: 'user3',
       name: 'Alex Johnson',
       avatar: 'https://randomuser.me/api/portraits/men/2.jpg',
       username: 'alexj',
@@ -45,6 +52,7 @@ const CONVERSATIONS = [
   { 
     id: '4', 
     user: {
+      id: 'user4',
       name: 'Tech Group',
       avatar: 'https://randomuser.me/api/portraits/men/3.jpg',
       username: 'techgroup',
@@ -57,92 +65,99 @@ const CONVERSATIONS = [
 ];
 
 const MessagesScreen = ({ navigation }) => {
-  const theme = useTheme();
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
+  const [conversations, setConversations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   
-  const onChangeSearch = query => setSearchQuery(query);
-
-  const renderConversationItem = ({ item }) => (
-    <TouchableOpacity 
-      style={styles.conversationItem}
-      onPress={() => navigation.navigate('MessageDetail', { conversationId: item.id })}
-    >
-      <Avatar.Image source={{ uri: item.user.avatar }} size={50} />
-      
-      <View style={styles.conversationContent}>
-        <View style={styles.conversationHeader}>
-          <View style={styles.nameContainer}>
-            <Text style={styles.userName} numberOfLines={1}>
-              {item.user.name}
-              {item.user.verified && (
-                <Icon name="check-decagram" size={14} color={theme.colors.primary} style={styles.verifiedIcon} />
-              )}
-            </Text>
-            {item.user.isGroup && (
-              <Text style={styles.groupLabel}>Group</Text>
-            )}
-          </View>
-          <Text style={styles.time}>{item.time}</Text>
-        </View>
-        
-        <View style={styles.messageContainer}>
-          <Text 
-            style={[
-              styles.lastMessage, 
-              item.unread && styles.unreadMessage
-            ]} 
-            numberOfLines={2}
-          >
-            {item.lastMessage}
-          </Text>
-          
-          {item.unread && (
-            <View style={styles.unreadIndicator} />
-          )}
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-
+  // Simulate fetching conversations
+  useEffect(() => {
+    fetchConversations();
+  }, []);
+  
+  const fetchConversations = () => {
+    // Simulate network delay
+    setTimeout(() => {
+      setConversations(CONVERSATIONS);
+      setLoading(false);
+    }, 1000);
+  };
+  
+  const handleSearchChange = (query) => {
+    setSearchQuery(query);
+    
+    // Filter conversations based on search query
+    if (query.trim() === '') {
+      setConversations(CONVERSATIONS);
+    } else {
+      const filteredConversations = CONVERSATIONS.filter(
+        conversation => 
+          conversation.user.name.toLowerCase().includes(query.toLowerCase()) ||
+          conversation.user.username.toLowerCase().includes(query.toLowerCase()) ||
+          conversation.lastMessage.toLowerCase().includes(query.toLowerCase())
+      );
+      setConversations(filteredConversations);
+    }
+  };
+  
+  const handleSearchFocus = () => {
+    // Handle search focus if needed
+    console.log('Search focused');
+  };
+  
+  const handleRefresh = () => {
+    setRefreshing(true);
+    // Simulate network delay
+    setTimeout(() => {
+      fetchConversations();
+      setRefreshing(false);
+    }, 1000);
+  };
+  
+  const handleConversationPress = (conversation) => {
+    // Navigate to conversation detail
+    navigation.navigate('ConversationDetail', { 
+      conversationId: conversation.id,
+      userName: conversation.user.name,
+      isGroup: conversation.user.isGroup
+    });
+  };
+  
+  const handleProfilePress = () => {
+    navigation.navigate('Profile');
+  };
+  
+  const handleSettingsPress = () => {
+    navigation.navigate('MessageSettings');
+  };
+  
+  const handleNewMessage = () => {
+    navigation.navigate('NewMessage');
+  };
+  
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-            <Avatar.Image source={{ uri: 'https://randomuser.me/api/portraits/men/1.jpg' }} size={32} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Messages</Text>
-        </View>
-        <TouchableOpacity>
-          <Icon name="cog-outline" size={24} color="#000" />
-        </TouchableOpacity>
-      </View>
-      
-      <View style={styles.searchContainer}>
-        <Searchbar
-          placeholder="Search Direct Messages"
-          onChangeText={onChangeSearch}
-          value={searchQuery}
-          style={styles.searchBar}
-          iconColor={theme.colors.primary}
-        />
-      </View>
-      
-      <FlatList
-        data={CONVERSATIONS}
-        renderItem={renderConversationItem}
-        keyExtractor={item => item.id}
-        ItemSeparatorComponent={() => <Divider />}
-        contentContainerStyle={styles.listContent}
+      <MessagesHeader
+        onProfilePress={handleProfilePress}
+        onSettingsPress={handleSettingsPress}
       />
       
-      <FAB
-        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
-        icon="plus"
-        color="#fff"
-        onPress={() => navigation.navigate('NewMessage')}
+      <MessageSearch
+        searchQuery={searchQuery}
+        onChangeSearch={handleSearchChange}
+        onFocus={handleSearchFocus}
       />
+      
+      <ConversationsList
+        conversations={conversations}
+        loading={loading}
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
+        onConversationPress={handleConversationPress}
+      />
+      
+      <NewMessageFAB onPress={handleNewMessage} />
     </View>
   );
 };
@@ -151,100 +166,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginLeft: 16,
-  },
-  searchContainer: {
-    padding: 10,
-    backgroundColor: '#fff',
-  },
-  searchBar: {
-    elevation: 0,
-    borderRadius: 20,
-    backgroundColor: '#EFF3F4',
-  },
-  listContent: {
-    paddingBottom: 20,
-  },
-  conversationItem: {
-    flexDirection: 'row',
-    padding: 16,
-  },
-  conversationContent: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  conversationHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  nameContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  userName: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    flex: 1,
-  },
-  verifiedIcon: {
-    marginLeft: 2,
-  },
-  groupLabel: {
-    backgroundColor: '#EFF3F4',
-    color: '#657786',
-    fontSize: 12,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    marginLeft: 8,
-  },
-  time: {
-    color: '#657786',
-    fontSize: 12,
-  },
-  messageContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  lastMessage: {
-    color: '#657786',
-    fontSize: 14,
-    flex: 1,
-  },
-  unreadMessage: {
-    color: '#000',
-    fontWeight: '500',
-  },
-  unreadIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#1DA1F2',
-    marginLeft: 4,
-  },
-  fab: {
-    position: 'absolute',
-    margin: 16,
-    right: 0,
-    bottom: 0,
   },
 });
 
