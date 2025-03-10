@@ -1,204 +1,231 @@
-import React from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity, ScrollView } from 'react-native';
-import { Text, Card, Avatar, Button, useTheme, Divider, Searchbar } from 'react-native-paper';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useTheme } from 'react-native-paper';
 
-// Sample live spaces data
+// Import components
+import SpacesHeader from '../../components/spaces/SpacesHeader';
+import SpaceSearch from '../../components/spaces/SpaceSearch';
+import SpaceCategoryTabs from '../../components/spaces/SpaceCategoryTabs';
+import SpacesSection from '../../components/spaces/SpacesSection';
+import SpacesList from '../../components/spaces/SpacesList';
+import CreateSpaceButton from '../../components/spaces/CreateSpaceButton';
+
+// Sample data for spaces
 const LIVE_SPACES = [
   { 
     id: '1', 
     title: 'React Native Development in 2025', 
     hosts: [
-      { name: 'John Doe', avatar: 'https://randomuser.me/api/portraits/men/1.jpg' },
-      { name: 'Jane Smith', avatar: 'https://randomuser.me/api/portraits/women/1.jpg' }
+      { id: 'host1', name: 'John Doe', avatar: 'https://randomuser.me/api/portraits/men/1.jpg' },
+      { id: 'host2', name: 'Jane Smith', avatar: 'https://randomuser.me/api/portraits/women/1.jpg' }
     ],
     participants: 245,
+    tags: ['technology', 'programming'],
     isLive: true,
   },
   { 
     id: '2', 
     title: 'iOS Design Trends', 
     hosts: [
-      { name: 'Alex Johnson', avatar: 'https://randomuser.me/api/portraits/men/2.jpg' }
+      { id: 'host3', name: 'Alex Johnson', avatar: 'https://randomuser.me/api/portraits/men/2.jpg' }
     ],
     participants: 128,
+    tags: ['design', 'iOS'],
     isLive: true,
   },
 ];
 
-// Sample scheduled spaces data
 const SCHEDULED_SPACES = [
   { 
     id: '3', 
     title: 'Mobile App Security Discussion', 
     hosts: [
-      { name: 'Emma Williams', avatar: 'https://randomuser.me/api/portraits/women/2.jpg' },
-      { name: 'Mike Brown', avatar: 'https://randomuser.me/api/portraits/men/3.jpg' }
+      { id: 'host4', name: 'Emma Williams', avatar: 'https://randomuser.me/api/portraits/women/2.jpg' },
+      { id: 'host5', name: 'Mike Brown', avatar: 'https://randomuser.me/api/portraits/men/3.jpg' }
     ],
     scheduledFor: 'Tomorrow, 10:00 AM',
+    tags: ['security', 'mobile'],
   },
   { 
     id: '4', 
     title: 'UI/UX Best Practices', 
     hosts: [
-      { name: 'Sarah Parker', avatar: 'https://randomuser.me/api/portraits/women/3.jpg' }
+      { id: 'host6', name: 'Sarah Parker', avatar: 'https://randomuser.me/api/portraits/women/3.jpg' }
     ],
     scheduledFor: 'Mar 12, 2:00 PM',
+    tags: ['design', 'UX'],
+  },
+  { 
+    id: '5', 
+    title: 'React Native vs Flutter Debate', 
+    hosts: [
+      { id: 'host7', name: 'David Wilson', avatar: 'https://randomuser.me/api/portraits/men/4.jpg' },
+      { id: 'host8', name: 'Lisa Thompson', avatar: 'https://randomuser.me/api/portraits/women/4.jpg' }
+    ],
+    scheduledFor: 'Next Week, 5:00 PM',
+    tags: ['development', 'mobile'],
   },
 ];
 
 const SpacesScreen = ({ navigation }) => {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const [searchQuery, setSearchQuery] = React.useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategoryIndex, setSelectedCategoryIndex] = useState(0);
+  const [liveSpaces, setLiveSpaces] = useState([]);
+  const [scheduledSpaces, setScheduledSpaces] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+  
+  const categories = ['For you', 'Live', 'Upcoming', 'Following', 'Technology'];
 
-  const onChangeSearch = query => setSearchQuery(query);
+  // Simulate fetching data
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  const renderLiveSpaceItem = ({ item }) => (
-    <Card style={styles.spaceCard}>
-      <Card.Content>
-        <View style={styles.liveIndicatorContainer}>
-          <View style={styles.liveIndicator} />
-          <Text style={styles.liveText}>LIVE</Text>
-          <Text style={styles.participantsText}>{item.participants} listening</Text>
-        </View>
-        
-        <Text style={styles.spaceTitle}>{item.title}</Text>
-        
-        <View style={styles.hostsContainer}>
-          <View style={styles.avatarsContainer}>
-            {item.hosts.map((host, index) => (
-              <Avatar.Image 
-                key={index}
-                source={{ uri: host.avatar }} 
-                size={28}
-                style={[styles.hostAvatar, { marginLeft: index > 0 ? -10 : 0 }]}
-              />
-            ))}
-          </View>
-          
-          <Text style={styles.hostsText}>
-            Hosted by {item.hosts.map(host => host.name).join(', ')}
-          </Text>
-        </View>
-        
-        <Button 
-          mode="contained" 
-          style={styles.joinButton}
-          labelStyle={styles.joinButtonLabel}
-          onPress={() => console.log(`Join space ${item.id}`)}
-        >
-          Join
-        </Button>
-      </Card.Content>
-    </Card>
-  );
+  const fetchData = () => {
+    // In a real app, you would fetch from an API
+    setLiveSpaces(LIVE_SPACES);
+    setScheduledSpaces(SCHEDULED_SPACES);
+  };
 
-  const renderScheduledSpaceItem = ({ item }) => (
-    <Card style={styles.spaceCard}>
-      <Card.Content>
-        <Text style={styles.scheduledText}>{item.scheduledFor}</Text>
-        
-        <Text style={styles.spaceTitle}>{item.title}</Text>
-        
-        <View style={styles.hostsContainer}>
-          <View style={styles.avatarsContainer}>
-            {item.hosts.map((host, index) => (
-              <Avatar.Image 
-                key={index}
-                source={{ uri: host.avatar }} 
-                size={28}
-                style={[styles.hostAvatar, { marginLeft: index > 0 ? -10 : 0 }]}
-              />
-            ))}
-          </View>
-          
-          <Text style={styles.hostsText}>
-            Hosted by {item.hosts.map(host => host.name).join(', ')}
-          </Text>
-        </View>
-        
-        <View style={styles.scheduledActionsContainer}>
-          <Button 
-            mode="outlined" 
-            style={styles.reminderButton}
-            labelStyle={styles.reminderButtonLabel}
-            onPress={() => console.log(`Set reminder for ${item.id}`)}
-          >
-            Set reminder
-          </Button>
-          
-          <Button 
-            mode="text" 
-            style={styles.shareButton}
-            labelStyle={styles.shareButtonLabel}
-            onPress={() => console.log(`Share space ${item.id}`)}
-          >
-            <Icon name="share-variant-outline" size={20} color={theme.colors.primary} />
-          </Button>
-        </View>
-      </Card.Content>
-    </Card>
-  );
+  const handleRefresh = () => {
+    setRefreshing(true);
+    // Simulate network request
+    setTimeout(() => {
+      fetchData();
+      setRefreshing(false);
+    }, 1000);
+  };
+
+  const handleSearchChange = (query) => {
+    setSearchQuery(query);
+  };
+
+  const handleSearchSubmit = () => {
+    console.log('Search submitted:', searchQuery);
+    // In a real app, you would search for spaces
+  };
+
+  const handleSearchFocus = () => {
+    // Navigate to search screen when search bar is tapped
+    console.log('Search focused');
+  };
+
+  const handleCategoryPress = (index) => {
+    setSelectedCategoryIndex(index);
+    // In a real app, you would fetch different content based on category
+  };
+
+  const handleSpacePress = (space) => {
+    console.log('Space pressed:', space);
+    // Navigate to space details
+  };
+
+  const handleJoinPress = (space) => {
+    console.log('Join space:', space);
+    // Join the space (would typically launch audio)
+  };
+
+  const handleReminderPress = (space) => {
+    console.log('Set reminder for space:', space);
+    // Set a reminder for the space
+  };
+
+  const handleSharePress = (space) => {
+    console.log('Share space:', space);
+    // Share the space
+  };
+
+  const handleHostPress = (host) => {
+    console.log('Host profile pressed:', host);
+    navigation.navigate('Profile', { userId: host.id });
+  };
+
+  const handleCreateSpace = () => {
+    console.log('Create new space');
+    // Navigate to create space screen
+  };
+
+  const handleSeeMoreLive = () => {
+    console.log('See more live spaces');
+    // Navigate to full live spaces screen
+  };
+
+  const handleSeeMoreUpcoming = () => {
+    console.log('See more upcoming spaces');
+    // Navigate to full upcoming spaces screen
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Spaces</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-          <Avatar.Image source={{ uri: 'https://randomuser.me/api/portraits/men/1.jpg' }} size={32} />
-        </TouchableOpacity>
-      </View>
+      <SpacesHeader
+        onProfilePress={() => navigation.navigate('Profile')}
+        onSearchPress={handleSearchFocus}
+      />
       
-      <View style={styles.searchContainer}>
-        <Searchbar
-          placeholder="Search Spaces"
-          onChangeText={onChangeSearch}
-          value={searchQuery}
-          style={styles.searchBar}
-          iconColor={theme.colors.primary}
-        />
-      </View>
+      <SpaceSearch
+        searchQuery={searchQuery}
+        onChangeSearch={handleSearchChange}
+        onSubmit={handleSearchSubmit}
+        onFocus={handleSearchFocus}
+      />
       
-      <ScrollView>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Happening now</Text>
-        </View>
+      <SpaceCategoryTabs
+        categories={categories}
+        selectedIndex={selectedCategoryIndex}
+        onCategoryPress={handleCategoryPress}
+      />
+      
+      <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[theme.colors.primary]}
+            tintColor={theme.colors.primary}
+          />
+        }
+        style={styles.scrollView}
+      >
+        {/* Live Spaces Section */}
+        <SpacesSection
+          title="Happening now"
+          showSeeMore={liveSpaces.length > 2}
+          onSeeMorePress={handleSeeMoreLive}
+        >
+          <SpacesList
+            spaces={liveSpaces}
+            type="live"
+            onSpacePress={handleSpacePress}
+            onJoinPress={handleJoinPress}
+            onHostPress={handleHostPress}
+            emptyMessage="No live spaces right now"
+          />
+        </SpacesSection>
         
-        <FlatList
-          data={LIVE_SPACES}
-          renderItem={renderLiveSpaceItem}
-          keyExtractor={item => item.id}
-          scrollEnabled={false}
-          ItemSeparatorComponent={() => <View style={styles.spaceSeparator} />}
-        />
-        
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Upcoming</Text>
-          <TouchableOpacity>
-            <Text style={styles.seeMoreText}>See more</Text>
-          </TouchableOpacity>
-        </View>
-        
-        <FlatList
-          data={SCHEDULED_SPACES}
-          renderItem={renderScheduledSpaceItem}
-          keyExtractor={item => item.id}
-          scrollEnabled={false}
-          ItemSeparatorComponent={() => <View style={styles.spaceSeparator} />}
-        />
+        {/* Scheduled Spaces Section */}
+        <SpacesSection
+          title="Upcoming"
+          showSeeMore={scheduledSpaces.length > 2}
+          onSeeMorePress={handleSeeMoreUpcoming}
+          containerStyle={styles.upcomingSection}
+        >
+          <SpacesList
+            spaces={scheduledSpaces}
+            type="scheduled"
+            onSpacePress={handleSpacePress}
+            onReminderPress={handleReminderPress}
+            onSharePress={handleSharePress}
+            onHostPress={handleHostPress}
+            maxItems={3}
+            emptyMessage="No upcoming spaces scheduled"
+          />
+        </SpacesSection>
       </ScrollView>
       
-      <Button
-        mode="contained"
-        style={styles.createSpaceButton}
-        labelStyle={styles.createSpaceButtonLabel}
-        icon="microphone"
-        onPress={() => console.log('Create new space')}
-      >
-        Create a Space
-      </Button>
+      <CreateSpaceButton onPress={handleCreateSpace} />
     </View>
   );
 };
@@ -206,134 +233,13 @@ const SpacesScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F7F9FA',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-  },
-  searchContainer: {
-    padding: 10,
-    backgroundColor: '#fff',
-  },
-  searchBar: {
-    elevation: 0,
-    borderRadius: 20,
-    backgroundColor: '#EFF3F4',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  seeMoreText: {
-    color: '#1DA1F2',
-  },
-  spaceCard: {
-    marginHorizontal: 16,
-    marginBottom: 8,
-    elevation: 0,
-    borderWidth: 1,
-    borderColor: '#EFF3F4',
-    borderRadius: 12,
-  },
-  liveIndicatorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  liveIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: 'red',
-    marginRight: 6,
-  },
-  liveText: {
-    color: 'red',
-    fontWeight: 'bold',
-    fontSize: 12,
-    marginRight: 6,
-  },
-  participantsText: {
-    color: '#657786',
-    fontSize: 12,
-  },
-  scheduledText: {
-    color: '#657786',
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  spaceTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  hostsContainer: {
-    marginBottom: 12,
-  },
-  avatarsContainer: {
-    flexDirection: 'row',
-    marginBottom: 4,
-  },
-  hostAvatar: {
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  hostsText: {
-    color: '#657786',
-    fontSize: 14,
-  },
-  joinButton: {
-    borderRadius: 20,
-  },
-  joinButtonLabel: {
-    fontSize: 14,
-  },
-  scheduledActionsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  reminderButton: {
-    borderRadius: 20,
+  scrollView: {
     flex: 1,
-    marginRight: 8,
   },
-  reminderButtonLabel: {
-    fontSize: 14,
-  },
-  shareButton: {
-    borderRadius: 20,
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  shareButtonLabel: {
-    fontSize: 14,
-  },
-  spaceSeparator: {
-    height: 8,
-  },
-  createSpaceButton: {
-    margin: 16,
-    borderRadius: 30,
-  },
-  createSpaceButtonLabel: {
-    fontSize: 16,
+  upcomingSection: {
+    marginTop: 8,
   },
 });
 
